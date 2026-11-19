@@ -33,9 +33,11 @@ function saveIdea(input) {
     if (all.slice(1).some(r=>String(r[7]||'').replace(/[?#].*$/,'').replace(/\/$/,'').toLowerCase()===normalized)) throw new Error('Este enlace ya está en la biblioteca.');
     const id = Math.max(0,...all.slice(1).map(r=>Number(r[0])||0))+1;
     const note = String(input.descripcion||'').trim().slice(0,600);
+    const author = String(input.nombre||'').trim().replace(/[<>\r\n]/g,' ').slice(0,80);
+    if (!author) throw new Error('Escribe tu nombre para identificar la idea.');
     const title = String(input.titulo||'').trim().slice(0,110) || ('Idea de '+(url.includes('instagram')?'Instagram':url.includes('tiktok')?'TikTok':'Facebook'));
     const kind = /graduaci[oó]n/i.test(note+' '+title)?'Graduación':/festival/i.test(note+' '+title)?'Festivales':'Reels';
-    sheet.appendRow([id,title,'Redes sociales',kind,'','',note,url,'Pendiente','','','💡','', 'Añadido por '+email+' · '+new Date().toLocaleString('es-ES')]);
+    sheet.appendRow([id,title,'Redes sociales',kind,'','',note,url,'Pendiente','','','💡','', 'Propuesta de '+author+' · '+new Date().toLocaleString('es-ES')]);
     return {ok:true,id:id,url:WEB};
   } finally { lock.releaseLock(); }
 }
