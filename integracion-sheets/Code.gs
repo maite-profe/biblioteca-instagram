@@ -14,6 +14,15 @@ function doGet() {
     .setTitle('Añadir idea · Punta Galea')
     .addMetaTag('viewport','width=device-width,initial-scale=1');
 }
+function getTemas() {
+  const email = String(Session.getActiveUser().getEmail() || '').toLowerCase();
+  if (!email.endsWith('@' + DOMAIN)) throw new Error('Accede con la cuenta del colegio.');
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(TAB);
+  if (!sheet) throw new Error('No existe la pestaña Redes.');
+  const values = sheet.getDataRange().getValues();
+  return [...new Set(values.slice(1).map(row => String(row[3] || '').trim()).filter(Boolean))]
+    .sort((a,b) => a.localeCompare(b,'es'));
+}
 function saveIdea(input) {
   const email = String(Session.getActiveUser().getEmail() || '').toLowerCase();
   if (!email.endsWith('@' + DOMAIN)) throw new Error('Accede con tu cuenta del colegio. Si tu identidad no está disponible, contacta con el responsable.');
@@ -36,7 +45,13 @@ function saveIdea(input) {
     const author = String(input.nombre||'').trim().replace(/[<>\r\n]/g,' ').slice(0,80);
     if (!author) throw new Error('Escribe tu nombre para identificar la idea.');
     const title = String(input.titulo||'').trim().slice(0,110) || ('Idea de '+(url.includes('instagram')?'Instagram':url.includes('tiktok')?'TikTok':'Facebook'));
-    const kind = /graduaci[oó]n/i.test(note+' '+title)?'Graduación':/festival/i.test(note+' '+title)?'Festivales':'Reels';
+    const selected = String(input.tema || '').trim();
+    const newTopic = String(input.temaNuevo || '').trim().replace(/[<>\\r\\n]/g,' ').slice(0,70);
+    const existingTopics = [...new Set(all.slice(1).map(row=>String(row[3]||'').trim()).filter(Boolean))];
+    let kind = selected === '__nuevo__' ? newTopic : selected;
+    if (!kind) throw new Error('Selecciona un tema o crea uno nuevo.');
+    const matching = existingTopics.find(t=>t.toLocaleLowerCase('es')===kind.toLocaleLowerCase('es'));
+    if (matching) kind = matching;
     sheet.appendRow([id,title,'Redes sociales',kind,'','',note,url,'Pendiente','','','💡','', 'Propuesta de '+author+' · '+new Date().toLocaleString('es-ES')]);
     return {ok:true,id:id,url:WEB};
   } finally { lock.releaseLock(); }
